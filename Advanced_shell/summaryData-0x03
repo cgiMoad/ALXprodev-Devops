@@ -1,34 +1,36 @@
 #!/bin/bash
 
-# Output CSV file
+# Directory where JSON files are stored
+DATA_DIR="pokemon_data"
 OUTPUT_FILE="pokemon_report.csv"
 
-# Write CSV header
+# Create CSV header
 echo "Name,Height (m),Weight (kg)" > "$OUTPUT_FILE"
 
-# Loop through all JSON files and extract the required fields
-for file in *.json; do
-    name=$(jq -r '.name' "$file")
+# Loop through JSON files and extract data
+for file in "$DATA_DIR"/*.json; do
+    name=$(jq -r '.name' "$file" | sed 's/.*/\u&/') # sed to capitalize first letter
     height=$(jq -r '.height' "$file")
     weight=$(jq -r '.weight' "$file")
 
-    # Convert height from decimeters to meters and weight from hectograms to kilograms
-    height_m=$(awk -v h="$height" 'BEGIN { printf "%.1f", h/10 }')
-    weight_kg=$(awk -v w="$weight" 'BEGIN { printf "%.1f", w/10 }')
+    # Convert to meters and kg
+    height_m=$(awk "BEGIN {print $height / 10}")
+    weight_kg=$(awk "BEGIN {print $weight / 10}")
 
     echo "$name,$height_m,$weight_kg" >> "$OUTPUT_FILE"
 done
 
 echo "CSV Report generated at: $OUTPUT_FILE"
-echo
+echo ""
 
-# Display CSV content
+# Display the CSV file
 cat "$OUTPUT_FILE"
-echo
+echo ""
 
-# Calculate average height and weight using awk (skip header)
-awk -F, 'NR>1 { total_h+=$2; total_w+=$3; count++ }
+# Calculate averages using awk
+awk -F, 'NR>1 {total_h+=$2; total_w+=$3; count++}
 END {
-    printf "Average Height: %.2f m\n", total_h/count
-    printf "Average Weight: %.2f kg\n", total_w/count
+    avg_h = total_h/count;
+    avg_w = total_w/count;
+    printf "Average Height: %.2f m\nAverage Weight: %.2f kg\n", avg_h, avg_w
 }' "$OUTPUT_FILE"
