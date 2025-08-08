@@ -14,7 +14,20 @@ fetch_pokemon() {
     echo "Fetching data for $pokemon..."
 
     while [ $attempt -le 3 ]; do
-        if curl -s --fail "https://pokeapi.co/api/v2/pokemon/$pokemon" -o "pokemon_data/${pokemon}.json"; then
+        # Run curl in background with timeout handling
+        curl -s --fail "https://pokeapi.co/api/v2/pokemon/$pokemon" -o "pokemon_data/${pokemon}.json" &
+        pid=$!
+
+        # Wait max 10 seconds for curl to finish
+        ( sleep 10 && kill $pid 2>/dev/null ) & 
+        watchdog=$!
+
+        wait $pid
+        exit_code=$?
+
+        kill $watchdog 2>/dev/null
+
+        if [ $exit_code -eq 0 ]; then
             echo "Saved data to pokemon_data/${pokemon}.json ✅"
             success=true
             break
