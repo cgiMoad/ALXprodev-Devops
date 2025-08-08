@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# List of Pokémon to fetch
+pokemons=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
+
+# Create a folder to store the data
+mkdir -p pokemon_data
+
+# File to store errors
+error_file="errors.txt"
+: > "$error_file"  # clear previous errors
+
+# Function to fetch a single Pokemon with retries
+fetch_pokemon() {
+    local pokemon=$1
+    local attempt=1
+    local success=false
+
+    echo "Fetching data for $pokemon..."
+
+    while [ $attempt -le 3 ]; do
+        if curl -s --fail "https://pokeapi.co/api/v2/pokemon/$pokemon" -o "pokemon_data/${pokemon}.json"; then
+            echo "Saved data to pokemon_data/${pokemon}.json ✅"
+            success=true
+            break
+        else
+            echo "Attempt $attempt failed for $pokemon..."
+            ((attempt++))
+            sleep 2
+        fi
+    done
+
+    if [ "$success" = false ]; then
+        echo "Error fetching data for $pokemon after 3 attempts ❌" >> "$error_file"
+    fi
+}
+
+# Launch all fetches in background
+for pokemon in "${pokemons[@]}"; do
+    fetch_pokemon "$pokemon" &
+done
+
+# Wait for all background jobs to finish
+wait
+
+echo "All downloads completed."
