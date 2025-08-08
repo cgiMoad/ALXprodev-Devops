@@ -6,15 +6,31 @@ pokemons=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
 # Create a folder to store the data
 mkdir -p pokemon_data
 
+# File to store errors
+error_file="errors.txt"
+: > "$error_file"  # clear old errors
+
 # Loop through each Pokémon
 for pokemon in "${pokemons[@]}"; do
     echo "Fetching data for $pokemon..."
-    
-    # Make the API request and save the result
-    if curl -s "https://pokeapi.co/api/v2/pokemon/$pokemon" -o "pokemon_data/${pokemon}.json"; then
-        echo "Saved data to pokemon_data/${pokemon}.json ✅"
-    else
-        echo "Error fetching data for $pokemon ❌" >> errors.txt
+
+    attempt=1
+    success=false
+
+    while [ $attempt -le 3 ]; do
+        if curl -s --fail "https://pokeapi.co/api/v2/pokemon/$pokemon" -o "pokemon_data/${pokemon}.json"; then
+            echo "Saved data to pokemon_data/${pokemon}.json ✅"
+            success=true
+            break
+        else
+            echo "Attempt $attempt failed for $pokemon..."
+            ((attempt++))
+            sleep 2  # wait before retry
+        fi
+    done
+
+    if [ "$success" = false ]; then
+        echo "Error fetching data for $pokemon after 3 attempts ❌" >> "$error_file"
     fi
 
     # Delay to avoid hitting rate limits
