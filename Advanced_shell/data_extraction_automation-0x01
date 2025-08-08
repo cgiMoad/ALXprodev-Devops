@@ -7,4 +7,5 @@ height=$(jq -r '.height' pikachu.json | awk '{printf "%.1f", $1/10}')
 weight=$(jq -r '.weight' pikachu.json | awk '{printf "%.0f", $1/10}')
 
 # Print formatted output
-echo "$name is of type $type, weighs ${weight}kg, and is ${height}m tall."
+echo "$name is of type $type, weighs ${formatted_weight}kg, and is ${formatted_height}m tall."
+
